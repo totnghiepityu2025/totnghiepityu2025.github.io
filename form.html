@@ -2,40 +2,37 @@
 <html>
 <head>
   <meta charset="utf-8" />
-  <title>Send Wishes</title>
+  <title>Wishes</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
 
-<h1>Send Your Wishes</h1>
-<nav><a href="index.html">View All Wishes</a></nav>
+<h1>All Wishes</h1>
+<nav><a href="form.html">Send a Wish</a></nav>
 
-<form id="wishForm">
-  <input id="name" placeholder="Your name" required />
-  <input id="course" placeholder="Your class / course" required />
-  <textarea id="message" rows="4" placeholder="Your wishes" required></textarea>
-  <button type="submit">Submit</button>
-</form>
-
-<div id="status" style="color:red; display:none;"></div>
+<div id="messages">Loading...</div>
+<div id="error" style="color:red; display:none;"></div>
 
 <script src="process.js"></script>
 <script>
-document.getElementById("wishForm").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const name = document.getElementById("name").value.trim();
-  const course = document.getElementById("course").value.trim();
-  const message = document.getElementById("message").value.trim();
-  const status = document.getElementById("status");
-
+async function loadMessages() {
   try {
-    await submitMessage({ name, course, message });
-    window.location.href = "index.html"; // chuyển trang để xem lời chúc
+    const data = await fetchMessagesRaw();
+    const container = document.getElementById("messages");
+
+    if (!data.length) {
+      container.innerHTML = "<p>No wishes yet.</p>";
+      return;
+    }
+
+    container.innerHTML = data.map(r => renderRecord(r)).join("");
   } catch (err) {
-    status.style.display = "block";
-    status.textContent = "Error: " + err;
+    document.getElementById("error").style.display = "block";
+    document.getElementById("error").textContent = "Error: " + err;
   }
-});
+}
+
+loadMessages();
 </script>
 
 </body>
