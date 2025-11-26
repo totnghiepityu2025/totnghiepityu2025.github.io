@@ -1,129 +1,356 @@
 <!doctype html>
 <html>
 <head>
-    <meta charset="utf-8" />
-    <title>Nhận lời chúc</title>
+  <meta charset="utf-8" />
+  <title>Nhận lời chúc</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    :root{
+      --primary:#0077ff;
+      --glass: rgba(255,255,255,0.75);
+      --overlay: rgba(0,0,0,0.45);
+      --success: #28a745;
+    }
 
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-family: Arial, sans-serif;
-            overflow: hidden;
-        }
+    html,body{
+      height:100%;
+      margin:0;
+      font-family: Arial, Helvetica, sans-serif;
+    }
 
-        /* ----- Background Video ----- */
-        #bg-video {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            object-fit: cover;
-            z-index: -1;
-        }
+    /* Container center */
+    body{
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      overflow:hidden;
+      background:#000;
+    }
 
-        h1 {
-            text-align: center;
-            color: #fff;
-            margin-bottom: 20px;
-            text-shadow: 0 0 8px rgba(0,0,0,0.6);
-        }
+    /* Background video */
+    #bg-video{
+      position:fixed;
+      inset:0;
+      width:100%;
+      height:100%;
+      object-fit:cover;
+      z-index:0;
+      filter: saturate(1.05) contrast(1.02);
+      will-change: transform;
+    }
 
-        .form-container {
-            width: 90vw;
-            max-width: 500px;
+    /* Slight dark overlay so form stands out */
+    .video-overlay{
+      position:fixed;
+      inset:0;
+      background: linear-gradient(180deg, rgba(0,0,0,0.15), rgba(0,0,0,0.35));
+      z-index:1;
+      pointer-events:none;
+    }
 
-            /* nền mờ */
-            background: rgba(255, 255, 255, 0.75);
+    /* Main wrapper above the video */
+    .page-wrap{
+      position:relative;
+      z-index:2;
+      width:100%;
+      max-width:900px;
+      padding:24px;
+      box-sizing:border-box;
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      min-height:100vh;
+    }
 
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0px 0px 18px rgba(0,0,0,0.35);
-        }
+    .form-container{
+      width:92vw;
+      max-width:520px;
+      background: var(--glass); /* độ mờ ở đây */
+      border-radius:16px;
+      padding:28px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.45);
+      backdrop-filter: blur(6px) saturate(1.05);
+      -webkit-backdrop-filter: blur(6px) saturate(1.05);
+    }
 
-        input, textarea {
-            width: 100%;
-            padding: 12px;
-            margin: 8px 0;
-            border-radius: 12px;
-            border: 1px solid #ccc;
-            box-sizing: border-box;
-            font-size: 15px;
-        }
+    h1{
+      margin:0 0 12px 0;
+      color:#000;
+      font-size:20px;
+      text-align:center;
+      text-shadow:none;
+    }
 
-        .button-wrapper {
-            text-align: center;
-            margin-top: 10px;
-        }
+    input, textarea{
+      width:100%;
+      padding:12px 14px;
+      margin:8px 0;
+      border-radius:12px;
+      border:1px solid rgba(0,0,0,0.12);
+      font-size:15px;
+      box-sizing:border-box;
+      outline:none;
+    }
 
-        button {
-            padding: 12px 28px;
-            cursor: pointer;
-            border-radius: 12px;
-            border: none;
-            background-color: #0077ff;
-            color: white;
-            font-size: 16px;
-        }
+    textarea{ resize:vertical; min-height:104px; }
 
-        button:hover {
-            opacity: 0.85;
-        }
+    .button-wrapper{ text-align:center; margin-top:8px; }
 
-        #status {
-            margin-top: 10px;
-            text-align: center;
-            font-weight: bold;
-        }
-    </style>
+    button{
+      padding:12px 26px;
+      border-radius:12px;
+      border:none;
+      background:var(--primary);
+      color:white;
+      font-size:16px;
+      cursor:pointer;
+      box-shadow: 0 6px 18px rgba(0,119,255,0.22);
+    }
+
+    button:active{ transform: translateY(1px); }
+
+    #status{ display:none; color: #b00020; text-align:center; margin-top:8px; font-weight:600; }
+
+    /* ===== Custom Modal ===== */
+    .modal-overlay{
+      position:fixed;
+      inset:0;
+      background: var(--overlay);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      z-index: 999;
+      opacity:0;
+      pointer-events:none;
+      transition: opacity 240ms ease;
+      backdrop-filter: blur(3px);
+    }
+
+    .modal-overlay.show{
+      opacity:1;
+      pointer-events:auto;
+    }
+
+    .modal {
+      width: min(92vw, 480px);
+      background: #fff;
+      border-radius: 14px;
+      padding: 22px;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.45);
+      transform: translateY(8px) scale(0.98);
+      opacity: 0;
+      transition: transform 280ms cubic-bezier(.2,.9,.3,1), opacity 220ms ease;
+      display:flex;
+      gap:16px;
+      align-items:flex-start;
+    }
+
+    .modal-overlay.show .modal{
+      transform: translateY(0) scale(1);
+      opacity:1;
+    }
+
+    .modal .icon{
+      min-width:56px; min-height:56px;
+      border-radius:50%;
+      background: linear-gradient(180deg, rgba(40,167,69,0.12), rgba(40,167,69,0.08));
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      flex-shrink:0;
+      margin-top:2px;
+    }
+
+    .icon svg{ width:34px; height:34px; display:block; }
+
+    .modal .content{
+      flex:1;
+    }
+
+    .modal .title{
+      font-size:18px;
+      font-weight:700;
+      margin:0 0 6px 0;
+      color: #111;
+    }
+
+    .modal .msg{
+      margin:0 0 14px 0;
+      color:#333;
+      line-height:1.35;
+      font-size:15px;
+    }
+
+    .modal .actions{
+      text-align:right;
+    }
+
+    .btn-ok{
+      background: linear-gradient(90deg,var(--primary), #005fdb);
+      color:white;
+      border:none;
+      padding:10px 16px;
+      border-radius:10px;
+      cursor:pointer;
+      font-weight:600;
+      box-shadow: 0 8px 20px rgba(0,119,255,0.18);
+    }
+
+    .btn-cancel{
+      background:transparent;
+      border:1px solid #ddd;
+      padding:9px 14px;
+      border-radius:10px;
+      cursor:pointer;
+      margin-right:8px;
+    }
+
+    /* small screens */
+    @media (max-width:420px){
+      .modal{ padding:16px; gap:12px; }
+      .icon{ min-width:48px; min-height:48px; }
+      .modal .title{ font-size:16px; }
+      .modal .msg{ font-size:14px; }
+    }
+  </style>
 </head>
-
 <body>
 
-<!-- VIDEO BACKGROUND -->
-<video id="bg-video" autoplay muted loop>
+  <!-- Background video -->
+  <video id="bg-video" autoplay muted loop playsinline>
     <source src="https://github.com/totnghiepityu2025/totnghiepityu2025.github.io/releases/download/video/A.mp4" type="video/mp4">
-</video>
+    <!-- fallback background color if video fails -->
+  </video>
+  <div class="video-overlay" aria-hidden="true"></div>
 
-<div>
-    <!-- <h1>Hãy gửi những lời tốt đẹp đến cho a/c nha</h1> -->
+  <div class="page-wrap">
+    <div class="form-container" role="region" aria-labelledby="formHeading">
+      <h1 id="formHeading">Hãy gửi những lời tốt đẹp đến cho a/c nha</h1>
 
-    <div class="form-container">
-        <form id="wishForm">
-            <input id="name" placeholder="Tên hoặc biệt danh đều được nha" required />
-            <input id="course" placeholder="Điền khóa nào để hong bị nhầm" required />
-            <textarea id="message" rows="4" placeholder="Gửi lời chúc, tình cảm, tâm thư, bla bla ở đây" required></textarea>
-            <div class="button-wrapper">
-                <button type="submit">Gửi</button>
-            </div>
-        </form>
-        <div id="status" style="color:red; display:none;"></div>
+      <form id="wishForm" novalidate>
+        <input id="name" name="name" placeholder="Tên hoặc biệt danh đều được nha" required />
+        <input id="course" name="course" placeholder="Điền khóa nào để hong bị nhầm" required />
+        <textarea id="message" name="message" rows="4" placeholder="Gửi lời chúc, tình cảm, tâm thư, bla bla ở đây" required></textarea>
+
+        <div class="button-wrapper">
+          <button type="submit" aria-label="Gửi lời chúc">Gửi</button>
+        </div>
+      </form>
+
+      <div id="status" role="status" aria-live="polite"></div>
     </div>
-</div>
+  </div>
 
-<script src="process.js"></script>
-<script>
-document.getElementById("wishForm").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const name = document.getElementById("name").value.trim();
-  const course = document.getElementById("course").value.trim();
-  const message = document.getElementById("message").value.trim();
-  const status = document.getElementById("status");
+  <!-- Custom modal -->
+  <div id="modalOverlay" class="modal-overlay" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="modal" role="document" aria-labelledby="modalTitle" aria-describedby="modalDesc">
+      <div class="icon" aria-hidden="true">
+        <!-- check icon -->
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="12" cy="12" r="11" stroke="none" fill="#28a745" opacity="0.12"></circle>
+          <path d="M7.5 12.2l2.8 2.8L16.5 9" stroke="#28a745" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        </svg>
+      </div>
 
-  try {
-    await submitMessage({ name, course, message });
-    window.location.href = "index.html";
-  } catch (err) {
-    status.style.display = "block";
-    status.textContent = "Error: " + err;
-  }
-});
-</script>
+      <div class="content">
+        <h3 id="modalTitle" class="title">Gửi thành công!</h3>
+        <p id="modalDesc" class="msg">Cảm ơn bạn đã gửi lời chúc — lời nhắn đã được ghi nhận. Chúc bạn một ngày thật vui! 🎉</p>
 
+        <div class="actions" style="display:flex; justify-content:flex-end;">
+          <button class="btn-cancel" id="modalCancel" type="button">Ở lại</button>
+          <button class="btn-ok" id="modalOk" type="button">OK</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Dummy submitMessage for demo if not provided by process.js
+    // If your process.js already defines submitMessage, this won't overwrite it.
+    if (typeof submitMessage === 'undefined') {
+      window.submitMessage = async function(payload){
+        // simulate server delay
+        return new Promise((resolve) => setTimeout(resolve, 550));
+      };
+    }
+
+    const form = document.getElementById('wishForm');
+    const statusEl = document.getElementById('status');
+
+    const modalOverlay = document.getElementById('modalOverlay');
+    const modalOk = document.getElementById('modalOk');
+    const modalCancel = document.getElementById('modalCancel');
+
+    function showModal(){
+      modalOverlay.classList.add('show');
+      modalOverlay.setAttribute('aria-hidden','false');
+      // focus OK for accessibility
+      modalOk.focus();
+      // add escape handler
+      document.addEventListener('keydown', escHandler);
+    }
+
+    function hideModal(shouldRedirect){
+      modalOverlay.classList.remove('show');
+      modalOverlay.setAttribute('aria-hidden','true');
+      document.removeEventListener('keydown', escHandler);
+      if (shouldRedirect) {
+        // chuyển trang sau khi đóng modal
+        window.location.href = 'index.html';
+      }
+    }
+
+    function escHandler(e){
+      if (e.key === 'Escape') {
+        hideModal(true);
+      }
+    }
+
+    // Click outside modal to close (and redirect)
+    modalOverlay.addEventListener('click', (ev) => {
+      if (ev.target === modalOverlay) hideModal(true);
+    });
+
+    modalOk.addEventListener('click', () => hideModal(true));
+    modalCancel.addEventListener('click', () => hideModal(false)); // chỉ đóng modal, không chuyển
+
+    // Form submit
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      statusEl.style.display = 'none';
+      statusEl.textContent = '';
+
+      const name = document.getElementById('name').value.trim();
+      const course = document.getElementById('course').value.trim();
+      const message = document.getElementById('message').value.trim();
+
+      if (!name || !course || !message) {
+        statusEl.style.display = 'block';
+        statusEl.textContent = 'Vui lòng điền đầy đủ thông tin trước khi gửi.';
+        return;
+      }
+
+      try {
+        // show a temporary loading state on the button
+        const sendBtn = form.querySelector('button[type="submit"]');
+        const prevText = sendBtn.textContent;
+        sendBtn.textContent = 'Đang gửi...';
+        sendBtn.disabled = true;
+
+        await submitMessage({ name, course, message });
+
+        // reset button
+        sendBtn.textContent = prevText;
+        sendBtn.disabled = false;
+
+        // show pretty modal
+        showModal();
+
+      } catch (err) {
+        statusEl.style.display = 'block';
+        statusEl.textContent = 'Lỗi khi gửi: ' + (err && err.message ? err.message : err);
+      }
+    });
+  </script>
 </body>
 </html>
